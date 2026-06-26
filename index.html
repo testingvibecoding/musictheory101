@@ -1137,8 +1137,7 @@ TEACH.names=(L)=>`
 · <b>${tr("音名","Letter names")}</b>（${tr("字母，键盘/乐器用","letters")}）：C D E F G A B</p>
 <div class="pianowrap minipw"><div class="lbl"><span>${tr("白键上的简谱与唱名（C 调）","Jianpu + solfège on white keys (key of C)")}</span></div>${pianoHTML(60,72,{showSolfege:true})}</div>
 <p>${tr("一句话定住关系（在 C 调里）：","In the key of C they line up:")} ${jpHTML("1")}=do=C，${jpHTML("5")}=sol=G。</p>
-<p>${tr("<b>关键区别：音名「绝对、固定」，唱名「相对、会变」。</b>","Key point: letter names are ABSOLUTE & fixed; solfège is RELATIVE.")}<br>${tr("· <b>音名</b>（C D E…，写全是 C3、C4、D4…）＝<b>绝对音高</b>：钢琴上每个键的音名永远不变，C4 永远是那个键、那个音高。","· Letter names (C D E…, or C3 C4 D4) = absolute pitch: each key's name never changes; C4 is always that one key and pitch.")}<br>${tr("· <b>唱名</b>（do re mi＝简谱 1 2 3）＝<b>相对</b>：do 永远是音阶的「第一个音」，所以换个调，1 2 3 对应的实际音高（按哪个键）就变了。","· Solfège (do-re-mi = 1-2-3) = relative: do is always the scale's 1st note, so 1/2/3 point to different real pitches in different keys.")}</p><p>${tr("例：1=C 时 do＝C；1=G 时 do＝G。同样唱「do」，按的是不同的键。","e.g. 1=C → do=C; 1=G → do=G — same do, different key.")}</p><div class="row">${timelineHTML({jp:"1 2 3",period:4,bpm:120,base:60,tag:tr("1=C：do=C","1=C → do=C")})}${timelineHTML({jp:"1 2 3",period:4,bpm:120,base:67,tag:tr("1=G：do=G","1=G → do=G")})}</div>
-<div class="row">${timelineHTML({jp:"1 3 5 3 | 1 3 5 1",period:4,bpm:120,base:60,tag:tr("1-3-5-3-1","1-3-5-3-1")})}</div>
+<p>${tr("<b>关键区别：音名「绝对、固定」，唱名「相对、会变」。</b>","Key point: letter names are ABSOLUTE & fixed; solfège is RELATIVE.")}<br>${tr("· <b>音名</b>（C D E…，写全是 C3、C4、D4…）＝<b>绝对音高</b>：钢琴上每个键的音名永远不变，C4 永远是那个键、那个音高。","· Letter names (C D E…, or C3 C4 D4) = absolute pitch: each key's name never changes; C4 is always that one key and pitch.")}<br>${tr("· <b>唱名</b>（do re mi＝简谱 1 2 3）＝<b>相对</b>：do 永远是音阶的「第一个音」，所以换个调，1 2 3 对应的实际音高（按哪个键）就变了。","· Solfège (do-re-mi = 1-2-3) = relative: do is always the scale's 1st note, so 1/2/3 point to different real pitches in different keys.")}</p><p>${tr("例：1=C 时 do＝C；1=G 时 do＝G。同样唱「do」，按的是不同的键。","e.g. 1=C → do=C; 1=G → do=G — same do, different key.")}</p><div class="row">${timelineHTML({jp:"1 1/e 6_/e 5_. 6_/e | 1 - - - | 1 1/e 6_/e 5_. 6_/e | 2 - - -",period:4,bpm:120,base:60,tag:tr("1=C：do=C","1=C → do=C")})}${timelineHTML({jp:"1 1/e 6_/e 5_. 6_/e | 1 - - - | 1 1/e 6_/e 5_. 6_/e | 2 - - -",period:4,bpm:120,base:67,tag:tr("1=G：do=G","1=G → do=G")})}</div>
 <details class="note" data-tag="${tr("埋个种子","seed")}"><summary>${tr("「1」一定是 C 吗？","Is 1 always C?")}</summary>
 <p style="color:var(--muted)">${tr("不一定。简谱是<b>首调</b>：1 代表「这个调的主音」。在 C 调 1=C，在 G 调 1=G。零基础阶段我们先固定在 <b>C 调（1=C）</b>，后面会解释 1 可以挪到别处。","Jianpu is movable-do: 1 = the key's tonic. We stay in C (1=C) for now; we'll explain later how 1 can move elsewhere.")}</p></details>`;
 QGEN.names=(concept,L)=>{
@@ -1169,8 +1168,8 @@ TEACH.staff=(L)=>`
 · ${tr("下面一个点 = 低八度：","Dot below = octave down: ")}${jpHTML("1_")} ${jpHTML("5_")}<br>
 · ${tr("两个点 = 两个八度：","Two dots = two octaves: ")}${jpHTML("1^^")} ${jpHTML("1__")}</p>
 <div class="row">${timelineHTML({jp:"5_ 1 5 1^ | 5 1 5_ -",period:4,bpm:120,base:60,tag:tr("低5·1·5·高1","low5·1·5·high1")})}</div>
-<p>${tr("这样光用数字就能写下整段旋律。例如《小星星》开头：","So a whole tune is just numbers. Twinkle starts:")} ${jpHTML("1 1 5 5 6 6 5")}</p>
-<div class="row">${timelineHTML({jp:"1 1 5 5 6 6 5",period:4,bpm:120,base:60,tag:"《小星星》"})}</div>
+<p>${tr("这样光用数字就能写下整段旋律。例如《贝加尔湖畔》开头（注意低八度点、延长线和休止）：","So a whole tune is just numbers — e.g. the opening of “By Lake Baikal” (note the low-octave dots, holds and rests):")} ${jpHTML("6_/e 7_/e 1 5 | 4 -")}</p>
+<div class="row">${timelineHTML({jp:"0 6_/e 7_/e 1 5 | 4 - 0 0 | 0 5_/e 6_/e 7_ 4 | 3 - 0 0",period:4,bpm:72,base:60,tag:"《贝加尔湖畔》"})}</div>
 <p style="color:var(--muted)">${tr("全程用「简谱 + 键盘 + 耳朵」，数字上下的小圆点就是八度，简单可靠。","Numbers + keyboard + ear; the little dots are octaves.")}</p>
 <p style="color:var(--muted)">${tr("⚠️ 易错：<b>0</b> 是休止(不发声)、<b>-</b> 是延长前一个音(不重唱)、数字上下的小点是<b>八度</b>(不是升降号)。","Watch out: 0 = rest, - holds the previous note, dots = octave (not accidentals).")}</p>`;
 QGEN.staff=(concept,L)=>{
@@ -1653,8 +1652,8 @@ TEACH.penta=(L)=>`
 <p>${tr("为什么少了 4 和 7 就'有东方味'？因为 3-4 和 7-1 那两个<b>半音</b>被拿掉了，剩下的音之间更宽松、更圆。","Removing 4 and 7 takes away the two half-steps (3-4, 7-1), leaving a rounder, gap-based sound.")}</p>
 <p>${tr("最有名的例子就是《茉莉花》，整首只用 1 2 3 5 6：","The classic example is Mo Li Hua (Jasmine) — built entirely on 1 2 3 5 6:")}</p>
 <div class="row">${timelineHTML({jp:"3 - 3 5 6 1^ 1^ 6 5 - 5 6 5 -",period:4,bpm:96,base:60,tag:tr("《茉莉花》开头","Mo Li Hua opening")})}</div>
-<p>${tr("再听《<b>沧海一声笑</b>》——它的主题是一条<b>下行</b>的五声音阶（6 5 3 2 1…），同样只用 1 2 3 5 6：","Hear also Cang Hai Yi Sheng Xiao — its theme is a descending pentatonic run (6 5 3 2 1…), again only 1 2 3 5 6:")}</p>
-<div class="row">${timelineHTML({jp:"6/e. 5/s 3/e 2/e 1 - | 3/e. 2/s 1/e 6_/e 5_ -",period:4,bpm:70,base:60,tag:tr("《沧海一声笑》主题","Cang Hai theme")})}</div>`;
+<p>${tr("再听《<b>青花瓷</b>》——它的旋律也只用五声音阶的 1 2 3 5 6（没有 4 和 7），听起来特别有<b>中国味</b>：","Hear also Qing Hua Ci (Blue-and-White Porcelain) — its melody also uses only the pentatonic 1 2 3 5 6 (no 4 or 7), giving it that Chinese flavour:")}</p>
+<div class="row">${timelineHTML({jp:"0/s 5/s 5/s 3/s 2/s 3/s 6_/e 2/s 3/s 5/s 3/s 2",period:4,bpm:80,base:60,tag:tr("《青花瓷》","Qing Hua Ci")})}</div>`;
 QGEN.penta=(concept,L)=>{ if(concept==="pentabuild"&&Math.random()<0.5) return {kind:"build",concept,qtype:tr("找被去掉的音","The dropped notes"),lo:60,hi:72,target:[65,71],prompt:tr("五声音阶＝大调去掉两个音。请在键盘上点出<b>被去掉</b>的那两个音（C 调：4 和 7），然后提交。","Pentatonic drops two notes from major. Tap the two DROPPED notes (key of C: 4 and 7), then submit."),explain:tr("被去掉的是 4(F) 和 7(B)；剩下 1 2 3 5 6 就是五声音阶。","The dropped notes are 4 (F) and 7 (B).")};
   if(concept==="what"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("五声音阶","Pentatonic"),prompt:tr("五声音阶是把大调<b>去掉哪两个音</b>后剩下的？","Pentatonic = the major scale minus which two notes?"),options:shuffle([{label:tr("4 和 7（fa、si）","4 and 7"),correct:true},{label:tr("3 和 7","3 and 7"),correct:false},{label:tr("1 和 5","1 and 5"),correct:false},{label:tr("4 和 6","4 and 6"),correct:false}]),explain:tr("五声＝1 2 3 5 6，正是大调去掉了 4(fa) 和 7(si) 这两个音。","Pentatonic drops 4 and 7 from the major scale.")};
   if(concept==="what") return {kind:"choice",concept,qtype:tr("五声音阶","Pentatonic"),
@@ -1686,8 +1685,9 @@ TEACH.tonality=(L)=>`
 · ${tr("从 <b>6(la)</b> 出发 = <b>小调</b>，忧郁、柔软：","From <b>6 (la)</b> = <b>minor</b>, sad:")} ${jpHTML("6_ 7_ 1 2 3 4 5 6")}</p>
 <div class="row">${timelineHTML({jp:"1 2 3 4 5 6 7 1^",period:4,bpm:120,base:60,tag:tr("大调(从1)·明亮","major")})}${timelineHTML({jp:"6_ 7_ 1 2 3 4 5 6",period:4,bpm:120,base:60,tag:tr("小调(从6)·忧郁","minor")})}</div>
 <p>${tr("从<b>台阶（音程）</b>看：大调是「全 全 半 全 全 全 半」；<b>自然小调</b>（从 6 起）是「<b>全 半 全 全 半 全 全</b>」——同样七个音，台阶顺序一变，色彩就从明亮变忧郁。","By steps: major = W W H W W W H; <b>natural minor</b> (from 6) = <b>W H W W H W W</b> — same seven notes, different step order, so the colour flips from bright to sad.")}</p>
-<p>${tr("它们用的是<b>同一组音</b>，只是'家'不同——这叫<b>关系大小调</b>。听短句更明显：","They share the same notes — different home. Hear short phrases:")}</p>
-<div class="row">${timelineHTML({jp:"1 3 5 3 1",period:4,bpm:120,base:60,tag:tr("大调味","major feel")})}${timelineHTML({jp:"6_ 1 3 1 6_",period:4,bpm:120,base:60,tag:tr("小调味","minor feel")})}</div>
+<p>${tr("它们用的是<b>同一组音</b>，只是'家'不同——这叫<b>关系大小调</b>。听听大小调旋律给人带来的不同感受：","They share the same notes — different home. Hear how major and minor feel different:")}</p>
+<div class="row">${timelineHTML({jp:"0/e 3/s 5/s 6 0/e 6/s 1^/s 7/e 5/e | 0/s 2/s 5/s 3/s - 0 0 | 0/e 3/s 5/s 6 0/e 6/s 1^/s 7/e 5/e | 2^/e. 7/s 1^ - 0",period:4,bpm:70,base:60,tag:tr("大调味","major feel")})}${timelineHTML({jp:"0 3/e 3/e 6 5 | 4 2 - 0/e 7_/e | 7_ 3/e 2/e - 7_/e 1/e | 6_ - - - | - - - 0",period:4,bpm:120,base:60,tag:tr("小调味","minor feel")})}</div>
+<p>${tr("一个小窍门：留意旋律<b>最后停在哪个音</b>——停在 <b>1（do）</b> 多半是大调，停在 <b>6（la）</b> 多半是小调。整段也一样：围着 <b>1 3 5</b> 打转、听起来明亮又安定的，偏大调；围着 <b>6 1 3</b>（la do mi）打转、听起来柔和发暗的，偏小调。","A quick tell: notice <b>which note the tune settles on</b> — landing on <b>1 (do)</b> is usually major; landing on <b>6 (la)</b> is usually minor. The whole melody works the same way: circling <b>1 3 5</b> sounds bright and settled (major), while circling <b>6 1 3</b> (la-do-mi) sounds soft and dark (minor).")}</p>
 <p style="color:var(--muted)">${tr("（这里只在'旋律'层面感受明暗，不涉及和弦。）","(We feel brightness melodically — no chords here.)")}</p>`;
 QGEN.tonality=(concept,L)=>{
   if(concept==="bright"){ const maj=Math.random()<0.5;
@@ -1760,21 +1760,21 @@ QGEN.phrasing=(concept,L)=>{ if(concept==="half5"&&Math.random()<0.5) return {ki
 TEACH.transpose=(L)=>`
 <p>${tr("<b>什么叫「首调」？</b>「首」就是<b>主音、起首的那个音</b>。简谱用的是<b>首调唱名</b>：<b>1(do) 永远代表「当前这个调的主音」</b>，而不是某个写死的音。所以在 C 调里 1=C，在 G 调里 1=G——<b>1 是跟着调走的</b>。","<b>What is movable-do (首调)?</b> '首' means the tonic. Jianpu uses <b>movable-do</b>: <b>1 (do) always means the tonic of whatever key you are in</b>, not a fixed pitch. So in C, 1=C; in G, 1=G — <b>do moves with the key</b>.")}</p>
 <p>${tr("对比<b>固定调</b>（钢琴、五线谱常用）：那里 do 永远钉死在 C，一换调音名就全变。简谱正相反——<b>谱面数字一个都不动，只换开头那句 1=X</b>。","Contrast <b>fixed-do</b> (piano/staff): do is always C, so the note names all change with the key. Jianpu is the opposite — <b>the numbers never move; only the 1=X mark changes</b>.")}</p>
-<p style="color:var(--muted)">${tr("换句话说：<b>音名 C3 C4 D4…＝绝对音高（每个键固定）</b>；<b>唱名 do(1)＝相对（随调移动）</b>。这就是为什么 1=C / 1=G 数字一样、音高却不同。","In short: letter names (C3 C4 D4) are absolute (keys fixed); do (1) is relative (moves with the key) — same numbers, different pitch.")}</p>
-<div class="row">${timelineHTML({jp:"1 2 3",period:4,bpm:120,base:60,tag:tr("1=C：1 唱 C","1=C → C")})}${timelineHTML({jp:"1 2 3",period:4,bpm:120,base:65,tag:tr("1=F：1 唱 F","1=F → F")})}${timelineHTML({jp:"1 2 3",period:4,bpm:120,base:67,tag:tr("1=G：1 唱 G","1=G → G")})}</div>
-<p style="color:var(--muted)">${tr("三个谱面都写「1 2 3」，但「1」分别落在 C / F / G——因为 1 始终是「这个调的 do」。这就是首调。","All three read 1 2 3, but 1 lands on C / F / G — because 1 is always the current key's do. That is movable-do.")}</p>
-<p>${tr("正因为简谱是「首调」，换 Key 才这么省事：不管你把整首歌升高还是降低（升降 Key），<b>谱面上的 1 2 3 完全不用改</b>，只改开头那句 <b>1=X</b>。这正是 KTV 遥控器的「升 / 降调」、吉他<b>变调夹(Capo)</b>在做的事。","That\u2019s why changing key is so easy: shift the whole song up/down and the numbers <b>never change</b> — only the <b>1=X</b> mark. That's exactly the KTV key buttons / a guitar capo.")}</p>
-${keySliderHTML("1 2 3 5 3 2 1",{bpm:120})}
+<p style="color:var(--muted)">${tr("换句话说：<b>音名 C3 C4 D4…＝绝对音高（每个键固定）</b>；<b>唱名 do(1)＝相对（随调移动）</b>。这就是为什么 1=C / 1=G 谱面一样、音高却不同。","In short: letter names (C3 C4 D4) are absolute (keys fixed); do (1) is relative (moves with the key) — the same score, different pitch.")}</p>
+<div class="row">${timelineHTML({jp:"0 1^/e 2^/e 1^ 1^ | 3^/e 6^/e 6^/e 3^/e 3^/e 6^/e 6^/e 3^/e | 3^/e 7^/e 7^ - 0",period:4,bpm:120,base:60,tag:tr("1=C：1 唱 C","1=C → C")})}${timelineHTML({jp:"0 1^/e 2^/e 1^ 1^ | 3^/e 6^/e 6^/e 3^/e 3^/e 6^/e 6^/e 3^/e | 3^/e 7^/e 7^ - 0",period:4,bpm:120,base:65,tag:tr("1=F：1 唱 F","1=F → F")})}${timelineHTML({jp:"0 1^/e 2^/e 1^ 1^ | 3^/e 6^/e 6^/e 3^/e 3^/e 6^/e 6^/e 3^/e | 3^/e 7^/e 7^ - 0",period:4,bpm:120,base:67,tag:tr("1=G：1 唱 G","1=G → G")})}</div>
+<p style="color:var(--muted)">${tr("三个谱面<b>完全一样</b>，但「1」分别落在 C / F / G——因为 1 始终是「这个调的 do」。这就是首调。","All three scores are identical, but 1 lands on C / F / G — because 1 is always the current key's do. That is movable-do.")}</p>
+<p>${tr("正因为简谱是「首调」，换 Key 才这么省事：不管你把整首歌升高还是降低（升降 Key），<b>谱面完全不用改</b>，只改开头那句 <b>1=X</b>。这正是 KTV 遥控器的「升 / 降调」、吉他<b>变调夹(Capo)</b>在做的事。","That\u2019s why changing key is so easy: shift the whole song up/down and the score <b>never changes</b> — only the <b>1=X</b> mark. That's exactly the KTV key buttons / a guitar capo.")}</p>
+${keySliderHTML("0/e 5/e 1^/e 2^/e 3^/e 2^/e 1^/e 7/e | 6/e 2^/e 2^ - -",{bpm:120})}
 <p>${tr("呼应第①关「音域」：歌太高唱不上去，就整体<b>降 Key</b>；太低就升。台阶关系没变，只是整体挪了位置。","Echoes Level ① (range): too high to sing → drop the key; too low → raise it. The steps don't change, the whole thing just moves.")}</p>
 <details class="note xopen" data-tag="${tr("男女同唱","octave")}"><summary>${tr("男声女声的八度错觉","Male/female octave illusion")}</summary>
 <p style="color:var(--muted)">${tr("流行歌谱通常只写一份简谱。男生和女生唱同一个 1(do)，男生实际通常<b>低一个八度</b>——听起来一高一低，但简谱记法完全一样。这就是「跟原唱总觉得高不上去/低不下来」的原因之一。","One score; men usually sing it an octave lower than women — same numbers, different actual octave.")}</p>
-<div class="row">${timelineHTML({jp:"1 2 3 4 5",period:4,bpm:120,base:72,tag:tr("女声音区","higher")})}${timelineHTML({jp:"1 2 3 4 5",period:4,bpm:120,base:60,tag:tr("男声(低八度)","lower 8ve")})}</div></details>`;
+<div class="row">${timelineHTML({jp:"0 1^/e 2^/e 1^ 1^ | 3^/e 6^/e 6^/e 3^/e 3^/e 6^/e 6^/e 3^/e | 3^/e 7^/e 7^ - 0",period:4,bpm:120,base:60,tag:tr("女声音区","higher")})}${timelineHTML({jp:"0 1^/e 2^/e 1^ 1^ | 3^/e 6^/e 6^/e 3^/e 3^/e 6^/e 6^/e 3^/e | 3^/e 7^/e 7^ - 0",period:4,bpm:120,base:48,tag:tr("男声(低八度)","lower 8ve")})}</div></details>`;
 QGEN.transpose=(concept,L)=>{
   if(concept==="movable"){ const v=Math.random()<0.34;
     if(v) return {kind:"choice",concept,qtype:tr("首调","Movable do"),
       prompt:rand([tr("把整首歌升高 key（变高），简谱上的数字要跟着改吗？","Raise the key — do the jianpu numbers change?"),tr("整首歌升 Key 之后，简谱的数字 1 2 3 需要改吗？","After raising the key, do jianpu numbers 1 2 3 change?")]),
       options:shuffle([{label:tr("不用改，只改开头的 1=X","No — only the 1=X mark changes"),correct:true},{label:tr("每个数字都要加 1","Add 1 to every number"),correct:false},{label:tr("全部要加升号 ♯","Add ♯ to everything"),correct:false},{label:tr("要重新写一份谱","Rewrite the whole score"),correct:false}]),
-      explain:tr("简谱是首调：升降 key 只改 1=X（1 落在哪个音），谱面 1 2 3 一个都不动。","Movable-do: only 1=X changes; the numbers stay.")};
+      explain:tr("简谱是首调：升降 key 只改 1=X（1 落在哪个音），谱面一个音都不动。","Movable-do: only 1=X changes; the score stays.")};
     const set=[["C","升高一个全音（do→re）","up a whole tone","D"],["D","升高一个全音","up a whole tone","E"],["F","升高一个全音","up a whole tone","G"],["G","升高一个全音","up a whole tone","A"],["A","升高一个全音","up a whole tone","B"],["D","降低一个全音（re→do）","down a whole tone","C"],["E","降低一个全音","down a whole tone","D"],["G","降低一个全音","down a whole tone","F"],["B","降低一个全音","down a whole tone","A"],["C","升高一个纯五度（do→sol）","up a perfect 5th","G"],["G","升高一个纯五度","up a perfect 5th","D"],["F","升高一个纯五度","up a perfect 5th","C"],["C","升高一个纯四度（do→fa）","up a perfect 4th","F"],["C","升高半音（do→升do）","up a semitone","#C"],["F","升高半音","up a semitone","#F"],["G","升高半音","up a semitone","#G"]];
     const p=rand(set); const pool=["C","D","E","F","G","A","B","#C","#F","#G"];
     return {kind:"choice",concept,qtype:tr("升降调改谱头","Transpose the header"),
@@ -1986,7 +1986,7 @@ TEACH.header=(L)=>`
 <p>· <b>1=C</b>：${tr("这首谱里的 1(do) 落在 <b>C</b>。换成 <b>1=G</b>，1 就落在 G（不是 C）。","where 1 sits. 1=G means 1 is G, not C.")}<br>
 · <b>4/4</b>：${tr("<b>上</b>数字=每小节几拍（4 拍）；<b>下</b>数字=<b>以几分音符为一拍</b>（这里的 4 ＝以四分音符为一拍）。「几分音符」是什么，第⑭关「时值」会专门讲。","top = beats per bar (4); bottom = which note value is one beat (4 = a quarter note). Note values: see Level ⑭.")}<br>
 · <b>♩=96</b>：${tr("速度，一分钟 96 拍。数字越大越快；有时改用文字（中速、抒情地）。","tempo: 96 beats per minute. Bigger = faster; sometimes written as words.")}</p>
-<div class="row">${timelineHTML({jp:"1 2 3 5",period:4,bpm:120,base:60,tag:"1=C"})}${timelineHTML({jp:"1 2 3 5",period:4,bpm:120,base:67,tag:"1=G"})}</div>
+<div class="row">${timelineHTML({jp:"2. 3 3. | - - 2/e 3/e 2/e 6_/e | 2. 3 3. | - - - -",period:4,bpm:80,base:60,tag:"1=C"})}${timelineHTML({jp:"2. 3 3. | - - 2/e 3/e 2/e 6_/e | 2. 3 3. | - - - -",period:4,bpm:80,base:67,tag:"1=G"})}</div>
 <p style="color:var(--muted)">${tr("注意上面两个：谱面 1 2 3 5 完全一样，只是 1=C / 1=G 不同，听到的音高就不同。","Same numbers, different 1=X → different pitch.")}</p>
 <p style="color:var(--muted)">${tr("根因：<b>音名（C、D…）是固定的绝对音高</b>，而<b>唱名 do(1) 随 1=X 移动</b>——1=C 时 do=C，1=G 时 do=G。","Why: letter names are fixed; do (1) moves with 1=X — 1=C → do=C, 1=G → do=G.")}</p>
 <p style="margin-top:10px">${tr("<b>常见速度 ↔ 情绪 ↔ bpm</b>（点一下听节拍快慢）：","<b>Common tempo ↔ mood ↔ bpm</b> (tap to hear the pulse):")}</p>
@@ -1996,7 +1996,7 @@ TEACH.header=(L)=>`
 · <b>${tr("急速","Presto / fast")}</b> ♩≈160+：${tr("激动、热烈、紧张（快摇滚、电子）。","excited, intense — fast rock / electronic.")}</p>
 <div class="row">${timelineHTML({drum:true,beats:8,period:4,bpm:63,tag:tr("慢板 ♩=63","slow 63")})}${timelineHTML({drum:true,beats:8,period:4,bpm:96,tag:tr("中速 ♩=96","mid 96")})}${timelineHTML({drum:true,beats:8,period:4,bpm:132,tag:tr("快板 ♩=132","fast 132")})}</div>
 <p style="color:var(--muted)">${tr("同样一段旋律：放慢 = 抒情，加快 = 欢快。bpm 不只是「快慢」，它直接决定情绪。","Same melody: slow = emotional, fast = lively. Tempo sets the mood, not just the speed.")}</p>
-<div class="row">${timelineHTML({jp:"1 2 3 5 | 6 5 3 1",period:4,bpm:66,base:60,tag:tr("同旋律·慢 ♩=66","same tune · slow")})}${timelineHTML({jp:"1 2 3 5 | 6 5 3 1",period:4,bpm:132,base:60,tag:tr("同旋律·快 ♩=132","same tune · fast")})}</div>`;
+<div class="row">${timelineHTML({jp:"2. 3 3. | - - 2/e 3/e 2/e 6_/e | 2. 3 3. | - - - -",period:4,bpm:63,base:60,tag:tr("同旋律·慢 ♩=63","same tune · slow ♩=63")})}${timelineHTML({jp:"2. 3 3. | - - 2/e 3/e 2/e 6_/e | 2. 3 3. | - - - -",period:4,bpm:132,base:60,tag:tr("同旋律·快 ♩=132","same tune · fast ♩=132")})}</div>`;
 QGEN.header=(concept,L)=>{
   if(concept==="onec"){ const k=rand([["G","G"],["F","F"],["D","D"],["A","A"]]);
     return {kind:"choice",concept,qtype:tr("1 在哪","Where is 1"),
