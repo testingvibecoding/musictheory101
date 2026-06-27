@@ -338,7 +338,8 @@ async function playMelody(seq,bpm=96){ // seq:[{m:midi|null, b:beats}]
   lightAlong(ev);
   return seq.reduce((s,n)=>s+n.b,0)*spb;
 }
-function drumFor(i,period,offset){ const p=(((i-(offset||0))%period)+period)%period;
+function drumFor(i,period,offset,bb){ const p=(((i-(offset||0))%period)+period)%period;
+  if(bb&&period===4) return (p===1||p===3)?"snare":"kick";
   if(period===4) return p===0?"kick":p===2?"snare":"hat";
   if(period===6) return p===0?"kick":p===3?"snare":"hat";
   if(period===2) return p===0?"kick":"hat";
@@ -348,9 +349,9 @@ function hitDrum(d){ try{
   else if(d==="snare") snare.triggerAttackRelease("16n",undefined,0.9);
   else hat.triggerAttackRelease("32n",undefined,0.6);
 }catch(e){} }
-async function playBeat(bpm=96,beats=4,accent=true,period=0,offset=0){
+async function playBeat(bpm=96,beats=4,accent=true,period=0,offset=0,bb=0){
   stopAll(); await initAudio(); const spb=60/bpm, per=period>0?period:(beats||4);
-  for(let i=0;i<beats;i++){ const d=drumFor(i,per,offset); _playTimers.push(setTimeout(()=>hitDrum(d), i*spb*1000)); }
+  for(let i=0;i<beats;i++){ const d=drumFor(i,per,offset,bb); _playTimers.push(setTimeout(()=>hitDrum(d), i*spb*1000)); }
 }
 function stopAudio(){ try{ synth&&synth.releaseAll&&synth.releaseAll(); }catch(e){} }
 
@@ -503,7 +504,7 @@ function jpNote(n,oct,acc,durU,dot){
 function jpParse(str){ const out=[]; (str||"").trim().split(/\s+/).forEach(tok=>{
   if(!tok) return;
   if(tok==="|"){ out.push({bar:1}); return; }
-  if(tok==="-"){ out.push({dash:1}); return; }
+  if(tok==="-"||tok==="-/e"||tok==="-/s"){ out.push({dash:tok==="-/e"?0.5:tok==="-/s"?0.25:1}); return; }
   let dot=false; if(tok.length>1&&tok.endsWith(".")){ dot=true; tok=tok.slice(0,-1); }
   let dur=0; const sl=tok.indexOf("/");
   if(sl>=0){ const d=tok.slice(sl+1); dur=d==="s"?2:d==="e"?1:0; tok=tok.slice(0,sl); }
@@ -523,7 +524,7 @@ function jpMidis(str,base=60){ const m=[]; jpParse(str).forEach(t=>{ if(t.bar||t
   m.push(base+JP_DEG[t.n]+12*t.oct+(t.acc==="#"?1:t.acc==="b"?-1:0)); }); return m; }
 function jpSeq(str,base,baseB){ base=base||60; baseB=(baseB||0.5); const out=[];
   jpParse(str).forEach(t=>{ if(t.bar) return;
-    if(t.dash){ if(out.length) out[out.length-1].b+=1; return; } // 延音线=加满一整拍，听得清
+    if(t.dash){ if(out.length) out[out.length-1].b+=t.dash; return; } // 延音线=加满一整拍，听得清
     out.push({ m: t.n===0?null : base+JP_DEG[t.n]+12*t.oct+(t.acc==="#"?1:t.acc==="b"?-1:0), b: baseB*(t.dot?1.5:1) }); });
   return out; }
 /* 简谱小卡片：🔊 可点播放 + 同时显示简谱 */
@@ -949,7 +950,7 @@ function keySliderHTML(jp,opt){ opt=opt||{}; const bpm=opt.bpm||110,b=opt.b||.5;
 function jpTimed(jp,base){ base=(base==null?60:base); const items=[]; let pos=0;
   jpParse(jp).forEach(t=>{
     if(t.bar){ items.push({bar:pos}); return; }
-    if(t.dash){ for(let k=items.length-1;k>=0;k--){ if(items[k].bar==null){ items[k].len+=1; break; } } pos+=1; return; }
+    if(t.dash){ for(let k=items.length-1;k>=0;k--){ if(items[k].bar==null){ items[k].len+=t.dash; break; } } pos+=t.dash; return; }
     const len=(t.dur===1?0.5:t.dur===2?0.25:1)*(t.dot?1.5:1);
     const m=(t.n===0)?null:(base+JP_DEG[t.n]+12*t.oct+(t.acc==="#"?1:t.acc==="b"?-1:0));
     const jpstr=(t.n===0)?null:((t.acc==="#"?"#":t.acc==="b"?"b":"")+t.n+(t.oct>0?"^".repeat(t.oct):t.oct<0?"_".repeat(-t.oct):""));
@@ -966,7 +967,7 @@ function melTimed(mel,base){ base=(base==null?60:base); const items=[]; let pos=
     const m=(mm==="r"||mm==="0")?null:+mm; const jpstr=(m==null)?null:midiToJp(m,base);
     items.push({m,len,start:pos,jpstr,v}); pos+=len; });
   return {items,total:(pos||1)}; }
-function timelineHTML(opt){ opt=opt||{}; const drum=!!opt.drum, jp=opt.jp||"", mel=opt.mel||"", bpm=opt.bpm||100, period=opt.period||4, base=opt.base||60, tag=opt.tag||"", pickup=(+opt.pickup||0);
+function timelineHTML(opt){ opt=opt||{}; const drum=!!opt.drum, jp=opt.jp||"", mel=opt.mel||"", bpm=opt.bpm||100, period=opt.period||4, base=opt.base||60, tag=opt.tag||"", pickup=(+opt.pickup||0), bb=(+opt.bb||0);
   let total, melHTML="", bars="", melRow="";
   if(drum){ total=opt.beats||8; }
   else { const T=mel?melTimed(mel,base):jpTimed(jp,base); total=T.total;
@@ -979,9 +980,9 @@ function timelineHTML(opt){ opt=opt||{}; const drum=!!opt.drum, jp=opt.jp||"", m
     melRow=`<div class="tlrow"><span class="tllabel">${tr("旋律","Melody")}</span><div class="tltrack">${bars}${melHTML}</div></div>`;
   }
   let beats=""; const nb=Math.round(total);
-  for(let i=0;i<nb;i++){ const dd=drumFor(i,period,pickup); const cls=dd==="kick"?" strong":dd==="snare"?" medium":""; const sym=dd==="kick"?"●":dd==="snare"?"◗":"·"; beats+=`<span class="tlcell tlbeat${cls}" data-t="${i}" data-len="1" style="left:${(i*100/total).toFixed(3)}%;width:${(100/total).toFixed(3)}%">${sym}</span>`; }
+  for(let i=0;i<nb;i++){ const dd=drumFor(i,period,pickup,bb); const cls=dd==="kick"?" strong":dd==="snare"?" medium":""; const sym=dd==="kick"?"●":dd==="snare"?"◗":"·"; beats+=`<span class="tlcell tlbeat${cls}" data-t="${i}" data-len="1" style="left:${(i*100/total).toFixed(3)}%;width:${(100/total).toFixed(3)}%">${sym}</span>`; }
   const label=(tag?tag+" ":"")+(drum?tr("鼓点·点开演示","beat demo"):tr("旋律＋鼓点·点开演示","melody+beat demo"));
-  return `<div class="tl" data-mljp="${jp}" data-mlmel="${mel}" data-drum="${drum?1:0}" data-beats="${total}" data-base="${base}" data-period="${period}" data-pickup="${pickup}" data-bpm="${bpm}">
+  return `<div class="tl" data-mljp="${jp}" data-mlmel="${mel}" data-drum="${drum?1:0}" data-beats="${total}" data-base="${base}" data-period="${period}" data-pickup="${pickup}" data-bb="${bb}" data-bpm="${bpm}">
     <button class="playbtn small tlplay">▶ ${label}</button>
     <div class="tlbody">
       ${melRow}
@@ -1014,7 +1015,7 @@ function bindExtras(root){
       const trkOn=(nm)=>{ const cb=w.querySelector('.lytrk[data-trk="'+nm+'"]'); return !cb||cb.checked; };
       if(!drum && trkOn("mel")){ playMelody(T.items.filter(it=>it.bar==null).map(it=>({m:it.m,b:it.len,v:it.v})),bpm); }
       if(w.dataset.mlbass && trkOn("bass")){ const Bb=jpTimed(w.dataset.mlbass,base); playMelody(Bb.items.filter(it=>it.bar==null).map(it=>({m:it.m,b:it.len,v:it.v})),bpm); }
-      if(trkOn("drum")){ playBeat(bpm,Math.round(total),true,period,+(w.dataset.pickup||0)); }
+      if(trkOn("drum")){ playBeat(bpm,Math.round(total),true,period,+(w.dataset.pickup||0),+(w.dataset.bb||0)); }
       w.classList.add("open");
       const cells=[...w.querySelectorAll(".tlcell")]; cells.forEach(c=>c.classList.remove("act"));
       cells.forEach(c=>{ const st=+c.dataset.t, ln=+(c.dataset.len||1); _tlTimers.push(setTimeout(()=>c.classList.add("act"),st*spb)); _tlTimers.push(setTimeout(()=>c.classList.remove("act"),(st+ln)*spb-25)); });
@@ -1322,7 +1323,7 @@ ${timelineHTML({jp:"1 2 3 4",period:4,bpm:100,base:60,tag:tr("原速 ♩=100","o
 · <b>${tr("急速·热烈","presto")}</b> ♩≈150–200：${tr("激动、紧张、燃（快摇滚、电子、朋克）。","intense, fast.")}</p>
 ${timelineHTML({jp:"5/e 5/e 6 5 1^ 7 -",period:3,bpm:50,base:60,tag:"♩=50 "+tr("极慢","v.slow")})}${timelineHTML({jp:"5/e 5/e 6 5 1^ 7 -",period:3,bpm:69,base:60,tag:"♩=69 "+tr("抒情","ballad")})}${timelineHTML({jp:"5/e 5/e 6 5 1^ 7 -",period:3,bpm:96,base:60,tag:"♩=96 "+tr("中速","mid")})}${timelineHTML({jp:"5/e 5/e 6 5 1^ 7 -",period:3,bpm:126,base:60,tag:"♩=126 "+tr("欢快","upbeat")})}${timelineHTML({jp:"5/e 5/e 6 5 1^ 7 -",period:3,bpm:168,base:60,tag:"♩=168 "+tr("急速","fast")})}
 <p style="color:var(--muted)">${tr("最直观的对比：<b>同一段旋律</b>只改速度，情绪完全不同——慢=深情，中=平稳，快=雀跃：","Same melody, tempo only — slow=tender, mid=steady, fast=joyful:")}</p>
-${timelineHTML({jp:"1 2 3 5 | 6 5 3 1",period:4,bpm:63,base:60,tag:tr("同旋律·慢 ♩=63","same · slow ♩=63")})}${timelineHTML({jp:"1 2 3 5 | 6 5 3 1",period:4,bpm:100,base:60,tag:tr("同旋律·中 ♩=100","same · mid ♩=100")})}${timelineHTML({jp:"1 2 3 5 | 6 5 3 1",period:4,bpm:150,base:60,tag:tr("同旋律·快 ♩=150","same · fast ♩=150")})}
+${timelineHTML({jp:"6_/e 1/e 1/e 2/e 2/e 3/e 3/e 5/s 6/s | 5. 3/e 2 - | 6_/e 1/e 1/e 2/e 2/e 3/e 3 | 6_ 5_ - -",period:4,bpm:63,base:60,tag:tr("同旋律·慢 ♩=63","same · slow ♩=63")})}${timelineHTML({jp:"6_/e 1/e 1/e 2/e 2/e 3/e 3/e 5/s 6/s | 5. 3/e 2 - | 6_/e 1/e 1/e 2/e 2/e 3/e 3 | 6_ 5_ - -",period:4,bpm:100,base:60,tag:tr("同旋律·中 ♩=100","same · mid ♩=100")})}${timelineHTML({jp:"6_/e 1/e 1/e 2/e 2/e 3/e 3/e 5/s 6/s | 5. 3/e 2 - | 6_/e 1/e 1/e 2/e 2/e 3/e 3 | 6_ 5_ - -",period:4,bpm:150,base:60,tag:tr("同旋律·快 ♩=150","same · fast ♩=150")})}
 <p style="color:var(--muted)">${tr("唱歌实用：先判断歌在哪一档速度，就能预判情绪和气口——慢歌多留气、咬字舒展；快歌咬字干脆、换气要短。","Singing tip: gauge the tempo band to anticipate mood and breathing.")}</p>`;
 QGEN.beat=(concept,L)=>{
   if(concept==="pulse"){ const n=rand([3,4,4,5]);
@@ -1415,16 +1416,15 @@ QGEN.dur=(concept,L)=>{ if(concept==="ratio"&&Math.random()<0.5) return {kind:"c
 TEACH.meter=(L)=>`
 <p>${tr("拍子<b>几拍一组</b>地循环；简谱用<b>小节线 |</b>把每组隔开，一格就是一<b>小节</b>。","Beats group into measures, split by barlines |.")}</p>
 <p>${tr("开头的<b>拍号</b>给出规则：<b>4/4</b>=每小节 4 拍；<b>3/4</b>=每小节 3 拍（圆舞曲）；<b>2/4</b>=每小节 2 拍（进行曲）。","Time signature: 4/4 = 4 beats/bar, 3/4 = 3 (waltz), 2/4 = 2 (march).")}</p>
-<p>4/4：${jpHTML("1 2 3 4 | 5 6 7 1^")}　　3/4：${jpHTML("1 2 3 | 5 4 3")}</p>
 <p>${tr("每小节的拍子有固定的<b>强弱规律</b>：<b>第 1 拍最强</b>（重拍），其余按拍号循环。鼓点用三种音色对应：<b>强</b>=底鼓、<b>次强</b>=军鼓（和 4/4 第 3 拍同一种音色）、<b>弱</b>=踩镲。点开下面每个拍号，看播放线扫过、听强弱循环：","Each bar has a fixed strong-weak pattern — beat 1 is strongest. Drums: <b>strong</b>=kick, <b>medium</b>=snare (same timbre as 4/4's beat 3), <b>weak</b>=hi-hat. Open each below:")}</p>
 <p>· <b>2/4</b>（${tr("进行曲","march")}）：<b style="color:var(--p2)">${tr("强 弱","S w")}</b></p>
-${timelineHTML({jp:"1 2 | 3 1",period:2,bpm:104,tag:tr("2/4 · 强弱","2/4 · S w")})}
+${timelineHTML({jp:"0 1^/e 1^/e | 1^/e 7/e 6/e 5/e | 6 - | 0 0 | 0 3/e 5/e | 6/e 5/e 3/e 2/e | 5/e 3/e - | 0 0",period:2,bpm:104,tag:tr("2/4 · 强弱","2/4 · S w")})}
 <p>· <b>3/4</b>（${tr("圆舞曲","waltz")}）：<b style="color:var(--p2)">${tr("强 弱 弱","S w w")}</b></p>
-${timelineHTML({jp:"1 2 3 | 5 4 3",period:3,bpm:138,tag:tr("3/4 · 强弱弱","3/4 · S w w")})}
+${timelineHTML({jp:"3 3/e 2/e 1/e 2/e | 3 - 3/e 6/e | 5 3/e 2/e 1/e 2/e | 3 - -",period:3,bpm:138,tag:tr("3/4 · 强弱弱","3/4 · S w w")})}
 <p>· <b>4/4</b>（${tr("最常见","most common")}）：<b style="color:var(--p2)">${tr("强 弱 次强 弱","S w M w")}</b> ${tr("——第 3 拍是「次强」。","— beat 3 is the medium accent.")}</p>
-${timelineHTML({jp:"1 2 3 4 | 5 6 7 1^",period:4,bpm:100,tag:tr("4/4 · 强弱次强弱","4/4 · S w M w")})}
+${timelineHTML({jp:"5_ 4/e 3/e - 0 | 7_/e 2/e 7_/e 1/e - 0 | 0/e 1/e 6/e 5/e 3/e 2 1/e | 2 - 0 0",period:4,bpm:100,tag:tr("4/4 · 强弱次强弱","4/4 · S w M w")})}
 <p>· <b>6/8</b>（${tr("抒情摇曳","lilting")}）：<b style="color:var(--p2)">${tr("强 弱 弱 次强 弱 弱","S w w M w w")}</b> ${tr("——两大拍、每拍三连，第 4 个八分是「次强」。","— two big beats of three; the 4th eighth is the medium accent.")}</p>
-${timelineHTML({jp:"1 1 2 3 3 2 | 3 3 4 5 5 3",period:6,bpm:160,tag:tr("6/8 · 强弱弱次强弱弱","6/8 · S w w M w w")})}
+${timelineHTML({jp:"0 - - - - 5_ | 1 - - 2 - 3 | 5/e 3/e 3 - 5_ - - | 1 - - 2 1 6_ | 5_ - - - 0 -",period:6,bpm:160,tag:tr("6/8 · 强弱弱次强弱弱","6/8 · S w w M w w")})}
 <p style="color:var(--muted)">${tr("⚠️ 易错：小节线 <b>|</b> 只是分组记号，<b>不占拍、不停顿</b>。","Watch out: the barline | just groups beats — no duration, no pause.")}</p>`;
 QGEN.meter=(concept,L)=>{ if(concept==="strong"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("次强拍","Medium accent"),prompt:tr("在 <b>4/4</b> 里，<b>第 3 拍</b>是什么强弱？","In 4/4, what is the 3rd beat?"),options:shuffle([{label:tr("次强","Medium accent"),correct:true},{label:tr("最强","Strongest"),correct:false},{label:tr("最弱","Weakest"),correct:false},{label:tr("休止","A rest"),correct:false}]),explain:tr("4/4 ＝强 弱 次强 弱：第 1 拍最强，第 3 拍是「次强」。","4/4 = S w M w; beat 3 is the medium accent.")};
   if(concept==="bar"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("小节线","Barlines"),prompt:tr("简谱里的小节线「|」<b>占不占拍</b>？","Does the barline | take up any beats?"),options:shuffle([{label:tr("不占拍——只是分组记号，不停顿","No — just a divider, no pause"),correct:true},{label:tr("占 1 拍","Takes 1 beat"),correct:false},{label:tr("占半拍","Half a beat"),correct:false},{label:tr("要停顿一下","A short pause"),correct:false}]),explain:tr("小节线只是把拍子分组的记号，不发声、不占时值、不停顿。","Barlines only group beats — no sound, no duration.")};
@@ -1457,12 +1457,10 @@ TEACH.synco=(L)=>`
 <p>${tr("学会基本时值后，几个工具让节奏有「表情」。每个都配了<b>对比例子</b>，点一点对照着听：","A few tools give rhythm expression — each with a compare-and-listen example:")}</p>
 <p>· <b>${tr("附点","Dot")}</b>：${tr("音符后的点把它<b>延长一半</b>（附点四分 = 1.5 拍），形成「长—短」的不平均。","a dot adds half its value (dotted ♩ = 1.5), making a long-short feel.")}</p>
 <div class="row">
-  ${timelineHTML({mel:"60:1 62:1 64:1 65:1",period:4,bpm:100,base:60,tag:tr("平均四分（都在拍上）","even quarters")})}
-  ${timelineHTML({mel:"60:1.5 62:0.5 64:1.5 65:0.5",period:4,bpm:100,base:60,tag:tr("附点节奏（长—短）","dotted: long-short")})}
+  ${timelineHTML({jp:"3/e 2/e 1/e 2/e | 3/e 3/e 3 | 2/e 2/e 2 | 3/e 5/e 5",period:2,bpm:100,base:60,tag:tr("平均（都在拍上）","even (on the beat)")})}
+  ${timelineHTML({jp:"3/e. 2/s 1/e. 2/s | 3/e. 3/s 3 | 2/e. 2/s 2 | 3/e. 5/s 5",period:2,bpm:100,base:60,tag:tr("附点（长—短）","dotted (long-short)")})}
 </div>
 <p style="color:var(--muted)">${tr("<b>附点的写法</b>：附点是写在数字<b>右边的小圆点「·」</b>；配上减时线就是更短的附点音。两种写法都念「长—短」，但快慢不同：","<b>Writing a dot:</b> the dot sits to the right of the number; add underlines for shorter dotted values. Same long-short feel, different speed:")}　${jpHTML("3.")} ${tr("附点四分=1.5拍","dotted ♩=1.5")}　/　${jpHTML("3/e.")} ${tr("附点八分=0.75拍","dotted ♪=0.75")}</p>
-${timelineHTML({jp:"3. 2/e 1. 2/e",period:4,bpm:96,base:60,tag:tr("附点四分（·）1.5+0.5","dotted ♩")})}
-${timelineHTML({jp:"3/e. 2/s 1/e. 2/s 3/e. 2/s 1/e. 2/s",period:4,bpm:96,base:60,tag:tr("附点八分（·＋减时线）0.75+0.25","dotted ♪")})}
 <p>· <b>${tr("连音线","Tie")}</b>：${tr("把两个<b>同高</b>的音连成一个更长的音（<b>只发一次声</b>）。","ties two same-pitch notes into one longer sound, struck once.")}</p>
 <div class="row">
   ${timelineHTML({mel:"60:1 60:1 62:1 62:1",period:4,bpm:96,base:60,tag:tr("不连：1、2 各弹两次","each struck twice")})}
@@ -1483,8 +1481,8 @@ ${timelineHTML({jp:"3 3 5 5",period:4,bpm:112,tag:tr("平稳·都在拍上","on-
 <details class="note xopen" data-tag="${tr("进歌点","pickup")}"><summary>${tr("弱起：歌为什么在第 1 拍「之前」就进","Pickup: starting before beat 1")}</summary>
 <p style="color:var(--muted)">${tr("很多歌第一句从上一小节最后半拍/一拍「抢」进来，这叫弱起（不完全小节）——就是「进歌早」的乐理解释。第⑲关有专门练习。","A pickup comes in before beat 1 — Level ⑲ drills it.")}</p>
 <div class="row">
-  ${timelineHTML({mel:"60:1 62:1 64:1 65:1",period:4,bpm:100,base:60,tag:tr("正常起（第 1 拍才进）","on beat 1")})}
-  ${timelineHTML({jp:"5 | 1 2 3 4",period:4,bpm:100,base:60,pickup:1,tag:tr("弱起（先抢一个 5 再到 1）","pickup: 5 then 1…")})}
+  ${timelineHTML({jp:"1/e 2/e 2/e 3/s 5/s - - | 6_/e 1/e 2/s 1/s 1/s 3/s - -",period:4,bpm:100,base:60,tag:tr("正常起（第 1 拍才进）","on beat 1")})}
+  ${timelineHTML({jp:"0 0 0 0/e 5/e | 1^ 1^/e 1^/e 2^ 3^/e 5^/e | 2^/s 3^/e. - 0 0",period:4,bpm:100,base:60,tag:tr("弱起（先抢一个 5 再到 高音1）","pickup: 5 then high 1")})}
 </div></details>`;
 QGEN.synco=(concept,L)=>{ if(concept==="pickup"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("弱起","Pickup"),prompt:tr("一首「弱起」的歌，第一个音落在<b>强拍</b>还是<b>弱拍</b>上？","In a pickup song, does the first note land on a strong or a weak beat?"),options:shuffle([{label:tr("弱拍（小节第 1 拍强拍之前）","A weak beat (before beat 1)"),correct:true},{label:tr("强拍（第 1 拍）","The strong beat 1"),correct:false},{label:tr("次强拍","The medium accent"),correct:false},{label:tr("最后一拍","The last beat"),correct:false}]),explain:tr("弱起＝从完整小节第 1 拍之前的弱拍抢进，所以第一个音在弱拍上。","A pickup starts on a weak beat before the first full downbeat.")};
   if(concept==="dot"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("附点","Dotted note"),prompt:tr("在 4/4 里，一个<b>附点四分音符</b>唱几拍？","In 4/4, how many beats is a dotted quarter note?"),options:shuffle([{label:tr("1.5 拍","1.5 beats"),correct:true},{label:tr("1 拍","1 beat"),correct:false},{label:tr("2 拍","2 beats"),correct:false},{label:tr("0.5 拍","0.5 beat"),correct:false}]),explain:tr("附点＝原时值＋一半：四分音符 1 拍 ＋ 半拍 ＝ 1.5 拍。","Dot adds half: 1 + 0.5 = 1.5 beats.")};
@@ -1531,9 +1529,9 @@ TEACH.dyn=(L)=>`
 · <b>${tr("发音法","Articulation")}</b>：${tr("连音(圆滑) / 断音(短促) / 重音(强调)。","legato / staccato / accent.")}<br>
 · <b>${tr("术语","Terms")}</b>：Allegro ${tr("快","fast")}、Andante ${tr("中速","walking")}、rit. ${tr("渐慢","rit.")}、a tempo ${tr("回原速","a tempo")}。</p>
 <div class="row">
-  ${timelineHTML({mel:"60:.5:0.25 62:.5:0.25 64:.5:0.25 65:.5:0.25 67:1:0.3",period:4,bpm:120,base:60,tag:tr("弱 p（轻）","soft p")})}
-  ${timelineHTML({mel:"60:.5:1 62:.5:1 64:.5:1 65:.5:1 67:1:1",period:4,bpm:120,base:60,tag:tr("强 f（响）","loud f")})}</div>
-<div class="row">${timelineHTML({jp:"1 2 3 4 5",period:4,bpm:120,base:60,tag:tr("连音(圆滑)","legato")})}<span class="chip" data-midis="60,62,64,65,67" data-arp="1" data-dur="16n">🔊 ${tr("断音(短促)","staccato")}</span></div>`;
+  ${timelineHTML({mel:"0:1.5 55:.5:.25 57:.5:.25 60:.5:.25 62:.5:.25 60:.5:.25 62:.5:.25 64:1:.25 64:1:.25 64:.5:.25 62:.5:.25 60:.5:.25 62:.5:.25 64:1:.25 64:1:.25 64:.5:.25 62:.5:.25 60:.5:.25 62:.75:.25 60:.75:.25 57:.5:.25 60:.75:.25 62:.75:.25 64:.5:.25 64:1.5:.25 0:.5 0:1 0:1",period:4,bpm:120,base:60,tag:tr("弱 p（轻）","soft p")})}
+  ${timelineHTML({mel:"0:1.5 60:.5:1 72:.5:1 71:.5:1 71:.5:1 69:.5:1 71:.5:1 69:.5:1 0:.5 67:.5:1 69:.5:1 67:.5:1 64:.5:1 62:.5:1 64:.5:1 67:.5:1 69:.5:1 67:1.5:1 0:1",period:4,bpm:120,base:60,tag:tr("强 f（响）","loud f")})}</div>
+<div class="row">${timelineHTML({jp:"0 6/e 3^/e 2^/e. 1^/e. 7/e | 6/e. 6/s 7/s 6/s 5/s 3/s 3/s 2/e. -",period:4,bpm:120,base:60,tag:tr("连音(圆滑)","legato")})}<span class="chip" data-midis="69,64,63,65,62,64,60,62,59,64,57,64,60" data-arp="1" data-dur="16n">🔊 ${tr("断音(短促)","staccato")}</span></div>`;
 QGEN.dyn=(concept,L)=>{
   if(concept==="dynamics"){ const set=[["p",tr("弱","soft")],["f",tr("强","loud")],["mf",tr("中强","medium-loud")],["cresc.",tr("渐渐变响","get louder")],["dim.",tr("渐渐变轻","get softer")]]; const p=rand(set);
     return {kind:"choice",concept,qtype:tr("力度记号","Dynamics"),
@@ -1727,7 +1725,7 @@ TEACH.phrasing=(L)=>`
 <p>${tr("更妙的是：一句停在哪个音，会给人不同的'语气'：","Where a phrase stops gives a different 'tone':")}</p>
 <p>· ${tr("停在 <b>1(do)</b> = <b>到家了、说完了</b>（完满、稳）：","Ending on <b>1</b> = <b>home, finished</b>: ")} ${jpHTML("1 2 3 2 1")}<br>
 · ${tr("停在 <b>5(sol)</b> = <b>话没说完、想继续</b>（悬着）：","Ending on <b>5</b> = <b>unfinished, wants more</b>: ")} ${jpHTML("1 2 3 4 5")}</p>
-<div class="row">${timelineHTML({jp:"1 2 3 2 1",period:4,bpm:120,base:60,tag:tr("停在1·到家","ends on 1 · home")})}${timelineHTML({jp:"1 2 3 4 5",period:4,bpm:120,base:60,tag:tr("停在5·没说完","ends on 5 · open")})}</div>
+<div class="row">${timelineHTML({jp:"2^/s 3^/s 2^/s 2^/s 1^/e 2^/s 3^/s 2^/s 2^/s 1^/e 2^/s 3^/s 2^/s 2^/s | 1^ - 0 0",period:4,bpm:125,base:60,tag:tr("停在1·到家","ends on 1 · home")})}${timelineHTML({jp:"0/e 5/e | 1^/e 1^/e 1^/e. 2^/s 3^/e 1^ 1^/e | 6/e 1^/e 1^/e. 1^/s 6/e 5 0/e",period:4,bpm:125,base:60,pickup:1,tag:tr("停在5·没说完","ends on 5 · open")})}</div>
 <p>${tr("很多歌就是'一句没说完(停5)＋一句说完了(停1)'两两成对，像问与答。","Many songs pair an 'open' phrase (ends on 5) with a 'closing' one (ends on 1) — like question & answer.")}</p>
 <p style="color:var(--muted)">${tr("（这是旋律落点带来的感觉，先不讲背后的和弦。）","(This is the feel of where the tune lands — no chords yet.)")}</p>`;
 QGEN.phrasing=(concept,L)=>{ if(concept==="half5"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("半终止感","Half-close"),prompt:tr("想让旋律听起来「话还没说完、想继续」，停在哪个音最合适？","To sound unfinished / wanting more, rest on which note?"),options:shuffle([{label:"5 (sol)",correct:true},{label:"1 (do)",correct:false},{label:"3 (mi)",correct:false},{label:tr("休止符","a rest"),correct:false}]),explain:tr("停在 5(sol) 悬着、像没说完；停在 1(do) 才是「到家、说完了」。","Ending on 5 feels open; on 1 feels closed.")};
@@ -1812,7 +1810,7 @@ QGEN.transpose=(concept,L)=>{
 /* ====================== ⑰ 三连音 · 一拍塞进三个 ====================== */
 TEACH.triplet=(L)=>`
 <p>${tr("平时一拍常「一分为二」（两个八分：哒-哒）。<b>三连音</b>是把一拍<b>平均分成 3 个</b>（哒-哒-哒），打破偶数感，带来一种<b>滚动/摇曳</b>的感觉，R&B、抒情过渡段很爱用。","Usually a beat splits in 2 (两 eighths). A <b>triplet</b> splits it into <b>3</b> even notes — a rolling feel, loved in R&B/ballad fills.")}</p>
-<div class="row">${timelineHTML({mel:"60:0.5 60:0.5 62:0.5 62:0.5",period:2,bpm:96,base:60,tag:tr("两等分·一拍2个（哒哒）","duple: 2 per beat")})}${timelineHTML({mel:"60:0.3333 60:0.3333 60:0.3333 62:0.3333 62:0.3333 62:0.3333",period:2,bpm:96,base:60,tag:tr("三连音·一拍3个（哒哒哒）","triplet: 3 per beat")})}</div>
+<div class="row">${timelineHTML({jp:"5/e 4/e 3/e 3/e 4/e 5/e 5/e 4/e 3/e 3/e 1^/e",period:4,bpm:96,base:60,tag:tr("两等分·一拍2个（哒哒）","duple: 2 per beat")})}${timelineHTML({mel:"67:0.3333 65:0.3333 64:0.3333 64:0.3333 65:0.3333 67:0.3333 67:0.3333 65:0.3333 64:0.3333 64:0.5 72:0.5",period:4,bpm:96,base:60,tag:tr("三连音·一拍3个（哒哒哒）","triplet: 3 per beat")})}</div>
 <p style="color:var(--muted)">${tr("简谱里：三个音<b>下面画连线</b>、<b>上面标一个 3</b>，就是三连音：","In jianpu: three notes with an underline and a 3 above = a triplet:")}</p>
 <div style="margin:8px 0"><span class="tripfig"><span class="tripbk"><svg viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M3 15 Q3 4 42 4" fill="none" stroke="var(--p3)" stroke-width="2"/><path d="M58 4 Q97 4 97 15" fill="none" stroke="var(--p3)" stroke-width="2"/></svg></span><span class="trip3">3</span>${jpHTML("1/e 1/e 1/e")}</span>　${jpHTML("5")}　<span class="tripfig"><span class="tripbk"><svg viewBox="0 0 100 16" preserveAspectRatio="none"><path d="M3 15 Q3 4 42 4" fill="none" stroke="var(--p3)" stroke-width="2"/><path d="M58 4 Q97 4 97 15" fill="none" stroke="var(--p3)" stroke-width="2"/></svg></span><span class="trip3">3</span>${jpHTML("3/e 3/e 3/e")}</span></div>`;
 QGEN.triplet=(concept,L)=>{ if(concept==="feel"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("三连音","Triplet"),prompt:tr("三连音上方通常标一个什么<b>数字</b>来提示？","A triplet is usually marked with which small number?"),options:shuffle([{label:"3",correct:true},{label:"2",correct:false},{label:"6",correct:false},{label:tr("不用标","nothing"),correct:false}]),explain:tr("三连音常在三个音上方标一个「3」，提示这一拍分成了 3 个。","A small 3 marks the three-in-one-beat group.")};
@@ -1841,10 +1839,11 @@ QGEN.triplet=(concept,L)=>{ if(concept==="feel"&&Math.random()<0.5) return {kind
 TEACH.swing=(L)=>`
 <p>${tr("同样写成八分音符，弹法有两种感觉：<b>平直(Straight)</b>=两个八分一样长（哒-哒）；<b>摇摆(Swing)</b>=把前一个<b>拉长</b>、后一个<b>缩短</b>（哒——哒），产生<b>弹跳/慵懒</b>的律动，爵士、布鲁斯、老摇滚的灵魂。","Same eighths, two feels: <b>straight</b> (even) vs <b>swing</b> (long-short, bouncy) — the soul of jazz/blues.")}</p>
 <div class="row">
-  ${timelineHTML({mel:"60:.5 62:.5 64:.5 65:.5 67:.5 65:.5 64:.5 62:.5",period:4,bpm:110,base:60,tag:tr("平直","straight")})}
-  ${timelineHTML({mel:"60:.66 62:.34 64:.66 65:.34 67:.66 65:.34 64:.66 62:.34",period:4,bpm:110,base:60,tag:tr("摇摆(长短)","swing")})}
+  ${timelineHTML({jp:"3/e 2/e 1/e 2/e | 3/e 3/e 3 | 2/e 2/e 2 | 3/e 5/e 5",period:2,bpm:100,base:60,tag:tr("平直","straight")})}
+  ${timelineHTML({jp:"3/e. 2/s 1/e. 2/s | 3/e. 3/s 3 | 2/e. 2/s 2 | 3/e. 5/s 5",period:2,bpm:100,base:60,tag:tr("摇摆(长短)","swing")})}
 </div>
 <p style="color:var(--muted)">${tr("不用记复杂比例，只要记：摇摆 = 前长后短的弹跳感。","No ratios needed — swing = long-then-short bounce.")}</p>
+<p style="color:var(--muted)">${tr("其实，上面这条<b>摇摆</b>用的就是<b>附点</b>节奏（前一个八分加附点、后一个变十六分，长—短）——正是上一章「附点」的写法。<b>用附点，就能把平直的八分写出摇摆的弹跳感。</b>","In fact, the swing clip above is a <b>dotted</b> rhythm (dotted eighth + sixteenth, long-short) — exactly the dotting from the previous chapter. <b>A dot is an easy way to turn straight eighths into a swung, bouncy feel.</b>")}</p>
 <p style="color:var(--muted)">${tr("<b>唱歌时也一样</b>：把字的长短稍微做点变化（前一个字唱长一点、后一个短一点，不必死板均分），就能给旋律添一点摇摆、律动感。","When singing too: slightly vary the syllable lengths (a touch longer then shorter, not rigidly even) for the same lilting groove.")}</p>`;
 QGEN.swing=(concept,L)=>{
   if(concept==="what"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("摇摆","Swing"),prompt:tr("<b>平直（straight）</b>的一对八分音符，长短比例大约是？","Two STRAIGHT eighth notes have roughly what long-short ratio?"),options:shuffle([{label:tr("1:1（一样长）","1:1 (equal)"),correct:true},{label:tr("2:1（前长后短）","2:1"),correct:false},{label:tr("1:2（前短后长）","1:2"),correct:false},{label:tr("3:1","3:1"),correct:false}]),explain:tr("平直＝两个八分一样长（1:1）；摇摆 swing 才是前长后短（约 2:1）。","Straight = 1:1; swing = long-short (~2:1).")};
@@ -1871,9 +1870,9 @@ TEACH.ornament=(L)=>`
 · <b>${tr("滑音","Glide / slide")}</b>：${tr("不直接撞上去，而是从下面滑上去。","slide up to the note instead of hitting it.")}<br>
 · <b>${tr("颤音","Vibrato")}</b>：${tr("长音保持基本音高，做微小的上下波动，听起来有「呼吸感」。","a long note wavers slightly — a 'breathing' feel.")}</p>
 <div class="row">
-  ${timelineHTML({mel:"67:.5 69:.5 67:.5 64:.5 62:.5 64:.5 60:1",period:4,bpm:100,base:60,tag:tr("干声·无倚音","plain, no grace")})}
-  ${timelineHTML({mel:"69:.12 67:.38 71:.12 69:.38 69:.12 67:.38 65:.12 64:.38 62:.5 64:.5 60:1",period:4,bpm:100,base:60,tag:tr("加倚音","with grace")})}
-  ${timelineHTML({mel:"62:.08 63:.08 64:.08 65:.08 66:.08 67:.6 69:.5 67:.5 64:.5 62:.5 60:1",period:4,bpm:120,base:60,tag:tr("滑音上行","glide up")})}
+  ${timelineHTML({jp:"0 0 0 3/e 6/e | -/e 6. - 2 | 5/e 5/e - - 5/e 6/e | 6_. 3/e 2/e. 1/e. 5/e | 3 - - 0",period:4,bpm:100,base:60,tag:tr("干声·无倚音","plain, no grace")})}
+  ${timelineHTML({jp:"0 0 0 3/e 5/s 6/s | -/e 6. - 2 | 5/e 5/e - - 5/e 6/e | 6_. 3/e 2/e. 1/e. 5/e | 3/s 5/s 3 - - 0/e",period:4,bpm:100,base:60,tag:tr("加倚音","with grace")})}
+  ${timelineHTML({jp:"0 0 0/e 1/e 1/e 2/e | 3 3 5/e. 3/s 5/s 6/s 1^/s 2^/s | 3^ - 3^/e 5^/e 2^/e 1^/e | 5 - 6 - | - - - -",period:4,bpm:120,base:60,tag:tr("滑音上行","glide up")})}
 </div>`;
 QGEN.ornament=(concept,L)=>{ if(concept==="vibrato"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("颤音","Vibrato"),prompt:tr("颤音（vibrato）最常用在什么音上？","Vibrato is most often used on what kind of note?"),options:shuffle([{label:tr("拖长的长音上","sustained long notes"),correct:true},{label:tr("休止符上","rests"),correct:false},{label:tr("每个极短的音上","every very short note"),correct:false},{label:tr("小节线上","barlines"),correct:false}]),explain:tr("颤音＝长音上做微小的上下波动，给声音「呼吸感」，所以多用在拖长的音上。","Vibrato (a slight wavering) is used on sustained notes.")};
   if(concept==="yiyin"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("倚音","Grace note"),prompt:tr("简谱里，倚音通常写成什么样子？","How is a grace note written in jianpu?"),options:shuffle([{label:tr("主音左上角的<b>小数字</b>","a tiny number at the main note's upper-left"),correct:true},{label:tr("音符下面的横线","a line under the note"),correct:false},{label:tr("两条竖线","two vertical bars"),correct:false},{label:tr("一个大圆圈","a big circle"),correct:false}]),explain:tr("倚音＝主音前一闪而过的小音，简谱写成主音左上角的小数字。","A grace note is a tiny number before the main note.")};
@@ -1906,8 +1905,8 @@ TEACH.fermata=(L)=>`
 <p>${tr("<b>自由延长号</b>（记号像只眼睛 <b>𝄐</b>，画在音符上方）表示：把这个音<b>自由地拉长</b>，想拉多久拉多久——此时<b>节拍器失效</b>，由歌手/演奏者按情感决定。","A <b>fermata</b> (𝄐, eye-shaped, above a note) means hold that note freely — the beat is suspended; the performer decides.")}</p>
 <p>${tr("最常出现在<b>歌曲结尾</b>或<b>高潮前的那个长音</b>，把情绪「吊」住再继续。","Most common on the last note or before a climax — to suspend the emotion.")}</p>
 <div class="row">
-  ${timelineHTML({mel:"60:1 62:1 64:1 65:1",period:4,bpm:100,base:60,tag:tr("正常四拍（匀速）","steady")})}
-  ${timelineHTML({mel:"60:1 62:1 64:1 67:4",period:4,bpm:100,base:60,tag:tr("最后一个音自由延长 𝄐","last note held 𝄐")})}
+  ${timelineHTML({jp:"0/e 1/s 1/s 1/e 3/e 2/e 2/s 2/s 1/s 1/e 1/s | 2/e 2/e 1/s 6_/s 6_. 0",period:4,bpm:67,base:60,tag:tr("正常四拍（匀速）","steady")})}
+  ${timelineHTML({jp:"0/e 1/s 1/s 1/e 3/e 2/e 2/s 2/s 1/s 1/e 1/s | 2/e 2/e 1/s 6_/s 6_. - | - 0 0 0",period:4,bpm:67,base:60,tag:tr("最后一个音自由延长 𝄐","last note held 𝄐")})}
 </div>`;
 QGEN.fermata=(concept,L)=>{ if(concept==="free"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("自由延长号","Fermata"),prompt:tr("自由延长号 <b>𝄐</b> 最常出现在哪里？","Where does a fermata 𝄐 most often appear?"),options:shuffle([{label:tr("乐句或全曲<b>结尾</b>的长音上","on the long note ending a phrase or piece"),correct:true},{label:tr("每个小节的第 1 拍","on beat 1 of every bar"),correct:false},{label:tr("休止符上","on rests"),correct:false},{label:tr("谱头","in the header"),correct:false}]),explain:tr("𝄐 常放在乐句或结尾的音上，自由拖长收住，像「踩一脚刹车」。","Fermatas usually sit on phrase or final notes.")};
   if(concept==="what"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("自由延长号","Fermata"),prompt:tr("看到 <b>𝄐</b>，这个音要唱多久？","Seeing 𝄐, how long do you hold the note?"),options:shuffle([{label:tr("自由延长，时长由演唱者决定","held freely — as long as you like"),correct:true},{label:tr("正好 1 拍","exactly 1 beat"),correct:false},{label:tr("正好 2 拍","exactly 2 beats"),correct:false},{label:tr("不唱（休止）","do not sing it"),correct:false}]),explain:tr("𝄐＝自由延长号：把这个音自由地拖长，没有固定拍数，由演唱者掌握。","A fermata = hold the note freely, no fixed length.")};
@@ -2026,8 +2025,7 @@ TEACH.entry=(L)=>`
 <p>· <b>${tr("正常起","On the beat")}</b>：${tr("从小节第 1 拍开始。","start on beat 1.")}<br>
 · <b>${tr("弱起","Pickup")}</b>：${tr("从上一小节的最后一拍「抢」进来（不完全小节）。","start on the last beat of the bar before.")}<br>
 · <b>${tr("反拍 / 空半拍进","Off-beat")}</b>：${tr("前半拍空着(休止)，后半拍才开口——周杰伦、陶喆等 R&B 极常见。","rest the first half-beat, sing on the off-beat — very R&B.")}</p>
-${beatGrid([{beat:"1",jp:"1",strong:1},{beat:"2",jp:"2"},{beat:"3",jp:"3"},{beat:"4",jp:"5"}])}
-${timelineHTML({jp:"5 5 6 5",period:4,bpm:100,tag:tr("正常起·第1拍进","on beat 1")})}${timelineHTML({jp:"5 | 1 2 3 1",period:4,bpm:100,pickup:1,tag:tr("弱起·先抢 5 再到 1","pickup")})}${timelineHTML({jp:"0/e 5/e 0/e 5/e 0/e 5/e 0/e 5/e",period:4,bpm:100,tag:tr("反拍·拍拍后半拍","off-beat")})}`;
+${timelineHTML({jp:"1/e 2/e 2/e 3/s 5/s - - | 6_/e 1/e 2/s 1/s 1/s 3/s - -",period:4,bpm:100,tag:tr("正常起·第1拍进","on beat 1")})}${timelineHTML({jp:"0 0 0 0/e 5/e | 1^ 1^/e 1^/e 2^ 3^/e 5^/e | 2^/s 3^/e. - 0 0",period:4,bpm:100,tag:tr("弱起·先抢 5 再到 高音1","pickup → high 1")})}${timelineHTML({jp:"0 0 0 0/e 1/e | 2/s 3/s 2/s 3/s 0 0 0/e 1/e | 4/e 3/e 4/e 3/e 3/s 4/e. 5/e 2/s 3/s | - 0 0 0",period:4,bpm:100,bb:1,tag:tr("反拍·强调二四拍","off-beat · accent on 2 & 4")})}`;
 QGEN.entry=(concept,L)=>{ if(concept==="count"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("数前奏","Count-in"),prompt:tr("进歌前跟着前奏「数拍」，主要是为了？","Counting in with the intro is mainly to…?"),options:shuffle([{label:tr("踩准节奏、和伴奏对齐进歌","lock onto the beat and enter in time"),correct:true},{label:tr("调音准","tune your pitch"),correct:false},{label:tr("记住歌词","memorize lyrics"),correct:false},{label:tr("调整音量","set the volume"),correct:false}]),explain:tr("数拍是为了抓住稳定的拍子，在正确的时刻和伴奏一起进。","Counting locks you to the beat so you enter on time.")};
   if(concept==="pickup"&&Math.random()<0.5) return {kind:"choice",concept,qtype:tr("弱起","Pickup"),prompt:tr("一首「弱起」的歌，第一个音落在<b>强拍</b>还是<b>弱拍</b>？","In a pickup song, does the first note land on a strong or a weak beat?"),options:shuffle([{label:tr("弱拍（第 1 拍强拍之前）","a weak beat (before beat 1)"),correct:true},{label:tr("强拍（第 1 拍）","the strong beat 1"),correct:false},{label:tr("次强拍","the medium accent"),correct:false},{label:tr("最后一拍","the last beat"),correct:false}]),explain:tr("弱起＝从完整小节第 1 拍之前的弱拍抢进，所以第一个音在弱拍上。","A pickup starts on a weak beat before the first downbeat.")};
   if(concept==="pickup") return {kind:"choice",concept,qtype:tr("弱起","Pickup"),
